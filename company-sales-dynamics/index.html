@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<title>十家公司销售额与同比变化</title>
+<style>
+:root{
+  --bg:#fff8fb;
+  --paper:#ffffff;
+  --ink:#2c2027;
+  --muted:#88747e;
+  --grid:#eadde3;
+  --grid-soft:#f5edf1;
+  --pink:#d65c91;
+  --pink-dark:#ad356b;
+  --pink-soft:#f3c5d8;
+  --pink-pale:#fdf0f5;
+  --track:#f8eef3;
+  --radius:24px;
+  --font:Inter,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --num:Inter,"SF Pro Display","Arial",sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);color:var(--ink);font-family:var(--font);scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:var(--bg)}
+button{font:inherit;color:inherit}
+.wrap{width:min(1440px,100%);margin:0 auto;padding:42px clamp(18px,4.4vw,68px) 34px}
+.eyebrow{display:flex;align-items:center;gap:10px;color:var(--pink-dark);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.eyebrow-mark{width:8px;height:8px;border-radius:50%;background:var(--pink)}
+.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(270px,.6fr);gap:36px;align-items:end;margin:22px 0 26px}
+h1{margin:0;max-width:850px;font-size:clamp(34px,5.1vw,68px);line-height:1.05;letter-spacing:-.055em;font-weight:800}
+.hero .accent{color:var(--pink-dark)}
+.deck{max-width:730px;margin:16px 0 0;color:var(--muted);font-size:14px;line-height:1.8}
+.hero-note{align-self:end;border-left:2px solid var(--pink-soft);padding:5px 0 5px 16px;color:var(--muted);font-size:12px;line-height:1.8}
+.hero-note strong{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.kpi{min-height:118px;background:var(--paper);border-radius:var(--radius);padding:20px 22px 18px;display:flex;flex-direction:column;justify-content:space-between}
+.kpi-label{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.07em}
+.kpi-value{font-family:var(--num);font-size:clamp(25px,3vw,38px);line-height:1.1;font-weight:800;letter-spacing:-.045em;color:var(--pink-dark);font-variant-numeric:tabular-nums}
+.kpi-value small{font-family:var(--font);font-size:12px;letter-spacing:0;color:var(--muted);font-weight:600;margin-left:5px}
+.kpi-caption{margin-top:7px;color:var(--muted);font-size:11px;line-height:1.5}
+.panel{background:var(--paper);border-radius:var(--radius);padding:clamp(18px,2.5vw,34px);}
+.panel-top{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:22px}
+.panel-title{margin:0;font-size:clamp(19px,2vw,25px);line-height:1.25;letter-spacing:-.03em;font-weight:800}
+.panel-sub{margin:7px 0 0;color:var(--muted);font-size:12px;line-height:1.7}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.segmented{display:flex;gap:3px;background:var(--pink-pale);border-radius:999px;padding:4px}
+.segmented button,.replay{border:0;border-radius:999px;background:transparent;padding:9px 13px;font-size:11px;font-weight:700;cursor:pointer;transition:background .25s ease,color .25s ease,transform .25s ease}
+.segmented button[aria-pressed="true"]{background:var(--pink-dark);color:#fff}
+.replay{background:var(--pink-pale);color:var(--pink-dark);padding:11px 14px}
+.segmented button:hover,.replay:hover{transform:translateY(-1px)}
+button:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--pink-dark);outline-offset:3px}
+.chart-frame{overflow:hidden}
+.chart-head,.company-row{display:grid;grid-template-columns:minmax(160px,.62fr) minmax(320px,1.38fr) minmax(220px,.9fr);column-gap:22px;align-items:center}
+.chart-head{padding:0 14px 10px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.head-title{margin-bottom:8px;color:var(--ink);font-size:11px;letter-spacing:.03em;text-transform:none}
+.head-sub{font-size:10px;font-weight:600;letter-spacing:0;text-transform:none}
+.head-sales,.head-growth{display:grid;align-items:end;gap:0}
+.sales-scale{height:16px;position:relative;margin-right:91px;color:#a28e98;font-family:var(--num);font-size:9px;font-weight:600;font-variant-numeric:tabular-nums}
+.sales-scale span{position:absolute;bottom:0;transform:translateX(-50%)}
+.sales-scale span:first-child{transform:none}
+.sales-scale span:last-child{transform:translateX(-100%)}
+.growth-scale{height:16px;position:relative;margin-right:74px;color:#a28e98;font-family:var(--num);font-size:9px;font-weight:600;font-variant-numeric:tabular-nums}
+.growth-scale span{position:absolute;bottom:0;transform:translateX(-50%)}
+.growth-scale span:first-child{transform:none}
+.growth-scale span:last-child{transform:translateX(-100%)}
+.company-row{position:relative;min-height:52px;padding:7px 14px;border-top:1px solid var(--grid-soft);border-radius:13px;opacity:0;transform:translateY(8px);transition:background .22s ease,opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1);transition-delay:var(--delay,0s);cursor:pointer}
+.chart-frame.is-ready .company-row{opacity:1;transform:translateY(0)}
+.company-row:hover,.company-row.is-preview{background:var(--pink-pale)}
+.company-row.is-pinned{background:#f9e4ed}
+.identity{min-width:0;display:flex;align-items:center;gap:12px}
+.rank{width:25px;height:25px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:var(--pink-pale);color:var(--pink-dark);font-family:var(--num);font-size:10px;font-weight:800;font-variant-numeric:tabular-nums}
+.company-row.top-three .rank{background:var(--pink-dark);color:#fff}
+.company-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:700}
+.top-tag{margin-left:auto;flex:0 0 auto;color:var(--pink-dark);font-size:9px;font-weight:800;letter-spacing:.04em}
+.sales-metric,.growth-metric{min-width:0;display:grid;align-items:center;gap:12px}
+.sales-metric{grid-template-columns:minmax(0,1fr) 88px}
+.growth-metric{grid-template-columns:minmax(90px,1fr) 72px}
+.sales-track{height:18px;position:relative;background:var(--track);border-radius:99px;overflow:hidden}
+.sales-fill{position:absolute;z-index:1;left:0;top:3px;height:12px;width:100%;border-radius:999px;background:var(--pink);transform:scaleX(0);transform-origin:left center;transition:transform .85s cubic-bezier(.22,1,.36,1);transition-delay:var(--bar-delay,0s)}
+.top-three .sales-fill{background:var(--pink-dark)}
+.chart-frame.is-ready .sales-fill{transform:scaleX(var(--ratio,0))}
+.sales-tick{position:absolute;z-index:2;top:3px;bottom:3px;width:1px;background:#fff;opacity:.66;pointer-events:none}
+.sales-gridline{position:absolute;z-index:0;top:0;bottom:0;width:1px;background:#e9d9e1;pointer-events:none}
+.sales-number,.growth-number{font-family:var(--num);font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.sales-number{color:var(--ink)}
+.growth-track{height:18px;position:relative;background:var(--track);border-radius:99px;overflow:hidden}
+.growth-zero{position:absolute;z-index:2;left:50%;top:0;bottom:0;width:1px;background:#a98998}
+.growth-fill{position:absolute;z-index:1;top:4px;height:10px;border-radius:99px;background:var(--pink);transform:scaleX(0);transition:transform .75s cubic-bezier(.22,1,.36,1);transition-delay:var(--bar-delay,0s)}
+.growth-fill.negative{background:var(--pink-soft);border:1px solid var(--pink-dark);height:10px}
+.chart-frame.is-ready .growth-fill{transform:scaleX(1)}
+.growth-fill.positive{transform-origin:left center}
+.growth-fill.negative{transform-origin:right center}
+.growth-number{color:var(--pink-dark)}
+.growth-number.negative{color:var(--ink)}
+.growth-number.missing{color:#ad9aa3;font-family:var(--font);font-weight:600}
+.chart-foot{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin:16px 14px 0;padding-top:13px;border-top:1px solid var(--grid-soft);color:var(--muted);font-size:10px;line-height:1.7}
+.legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.legend-dot{width:8px;height:8px;border-radius:50%;background:var(--pink)}
+.legend-dot.dark{background:var(--pink-dark)}
+.interaction-hint{text-align:right}
+.detail-card{margin-top:14px;padding:18px 20px;background:var(--pink-pale);border-radius:18px;display:grid;grid-template-columns:minmax(170px,.7fr) repeat(3,minmax(110px,1fr));gap:18px;align-items:center;min-height:82px}
+.detail-kicker{color:var(--pink-dark);font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.detail-company{margin-top:5px;font-size:15px;font-weight:800}
+.detail-metric span{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}
+.detail-metric strong{font-family:var(--num);font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.insight{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.insight-card{padding:20px 22px;background:var(--paper);border-radius:var(--radius);}
+.insight-label{color:var(--pink-dark);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.insight-card p{margin:9px 0 0;font-size:13px;line-height:1.8;color:var(--muted)}
+.insight-card strong{color:var(--ink)}
+details{margin-top:14px;background:var(--paper);border-radius:18px;padding:15px 20px}
+summary{cursor:pointer;color:var(--pink-dark);font-size:12px;font-weight:800}
+.table-wrap{overflow:auto;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+th,td{padding:9px 12px;border-bottom:1px solid var(--grid-soft);text-align:left}
+th{color:var(--muted);font-size:10px;letter-spacing:.04em}
+td.num{text-align:right;font-family:var(--num);font-variant-numeric:tabular-nums}
+footer{padding:22px 4px 0;color:var(--muted);font-size:10px;line-height:1.8}
+footer strong{color:var(--ink)}
+@media(max-width:900px){
+  .wrap{padding-top:30px}
+  .hero{grid-template-columns:1fr;gap:15px}
+  .hero-note{max-width:620px}
+  .chart-head,.company-row{grid-template-columns:minmax(142px,.55fr) minmax(270px,1.35fr) minmax(205px,.9fr);column-gap:14px}
+  .sales-metric{grid-template-columns:minmax(0,1fr) 80px;gap:8px}
+  .growth-metric{grid-template-columns:minmax(82px,1fr) 68px;gap:8px}
+  .sales-scale{margin-right:82px}.growth-scale{margin-right:68px}
+}
+@media(max-width:680px){
+  .segmented button,.replay{min-height:44px}
+  .wrap{padding:23px 14px 24px}
+  .hero{margin:17px 0 18px}
+  .deck{font-size:12px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .kpi{min-height:105px;padding:15px}
+  .panel{padding:17px 12px;border-radius:20px}
+  .panel-top{display:block;margin:0 4px 17px}
+  .controls{justify-content:flex-start;margin-top:14px}
+  .chart-head{grid-template-columns:1fr 1fr;gap:12px;padding:0 8px 8px}
+  .head-ident{display:none}
+  .head-sales,.head-growth{display:block}
+  .head-title{font-size:10px;margin-bottom:5px}
+  .head-sub{font-size:9px;line-height:1.5}
+  .sales-scale,.growth-scale{margin:5px 0 0;height:14px;font-size:8px}
+  .company-row{grid-template-columns:1fr;gap:8px;padding:10px 9px;min-height:auto}
+  .identity{min-height:25px}
+  .company-name{font-size:12px}
+  .sales-metric{grid-template-columns:minmax(0,1fr) 78px;gap:9px}
+  .growth-metric{grid-template-columns:minmax(0,1fr) 68px;gap:9px}
+  .sales-number,.growth-number{font-size:10px}
+  .sales-track,.growth-track{height:16px}
+  .sales-fill{top:3px;height:10px}.growth-fill{top:3px;height:10px}
+  .chart-foot{display:block;margin:13px 9px 0;padding-top:10px}
+  .interaction-hint{text-align:left;margin-top:5px}
+  .detail-card{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:15px}
+  .detail-primary{grid-column:1/-1}
+  .detail-metric strong{font-size:13px}
+  .insight{grid-template-columns:1fr;gap:8px}
+  .insight-card{padding:16px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+  .company-row{opacity:1;transform:none}
+  .sales-fill{transform:scaleX(var(--ratio,0))}
+  .growth-fill{transform:scaleX(1)}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="eyebrow"><span class="eyebrow-mark"></span> SALES SCALE · GROWTH SIGNAL</div>
+  <section class="hero" aria-labelledby="page-title">
+    <div>
+      <h1 id="page-title">头部三家，占了本表<br><span class="accent">63.2%</span> 的销售额</h1>
+      <p class="deck">十家企业销售规模与同比增幅并排呈现。销售额由长度编码；同比以 0% 为中线，正负方向一眼可见。</p>
+    </div>
+    <div class="hero-note"><strong>先看结论</strong>欧莱雅销售额约为第二名联合利华的 1.79 倍；已披露同比的 8 家中，7 家为正增长。</div>
+  </section>
+
+  <section class="kpis" aria-label="关键数据">
+    <article class="kpi"><div class="kpi-label">榜单销售额合计</div><div class="kpi-value">5,435.57<small>亿元</small></div><div class="kpi-caption">仅对表中 10 家企业求和</div></article>
+    <article class="kpi"><div class="kpi-label">前三名占比</div><div class="kpi-value">63.2<small>%</small></div><div class="kpi-caption">欧莱雅、联合利华、宝洁</div></article>
+    <article class="kpi"><div class="kpi-label">已披露同比</div><div class="kpi-value">7 / 8<small>为正增长</small></div><div class="kpi-caption">另有 2 家原表未提供同比</div></article>
+    <article class="kpi"><div class="kpi-label">最大 / 第二名</div><div class="kpi-value">1.79<small>倍</small></div><div class="kpi-caption">欧莱雅 ÷ 联合利华</div></article>
+  </section>
+
+  <section class="panel" aria-labelledby="chart-title">
+    <div class="panel-top">
+      <div>
+        <h2 class="panel-title" id="chart-title">规模排名 × 增长方向</h2>
+        <p class="panel-sub">销售额每格约 25 亿元，条长按原值比例绘制；同比刻度范围 −10% 至 +10%。</p>
+      </div>
+      <div class="controls" aria-label="图表控制">
+        <div class="segmented" role="group" aria-label="排序方式">
+          <button type="button" data-sort="sales" aria-pressed="true">按销售额</button>
+          <button type="button" data-sort="growth" aria-pressed="false">按同比增幅</button>
+        </div>
+        <button class="replay" id="replay" type="button" aria-label="重新播放图表动画">↻ 重播</button>
+      </div>
+    </div>
+
+    <div class="chart-frame" id="chart-frame">
+      <div class="chart-head" aria-hidden="true">
+        <div class="head-ident"><div class="head-title">排名 · 公司</div><div class="head-sub">前三名以深粉强调</div></div>
+        <div class="head-sales">
+          <div class="head-title">销售额 · 亿元</div>
+          <div class="sales-scale"><span style="left:0%">0</span><span style="left:26.32%">500</span><span style="left:52.63%">1,000</span><span style="left:78.95%">1,500</span><span style="left:100%">1,900</span></div>
+        </div>
+        <div class="head-growth">
+          <div class="head-title">同比增幅</div>
+          <div class="growth-scale"><span style="left:0%">−10%</span><span style="left:50%">0</span><span style="left:100%">+10%</span></div>
+        </div>
+      </div>
+      <div id="rows" aria-live="polite"></div>
+      <div class="chart-foot">
+        <div class="legend"><span class="legend-dot dark"></span><span>前三名</span><span class="legend-dot"></span><span>其余公司</span><span>·</span><span>同比零线位于中点</span></div>
+        <div class="interaction-hint">悬停预览 · 触碰/点击锁定详情 · 可切换排序</div>
+      </div>
+    </div>
+
+    <div class="detail-card" id="detail-card" aria-live="polite">
+      <div class="detail-primary"><div class="detail-kicker" id="detail-kicker">DETAIL · HOVER OR SELECT</div><div class="detail-company" id="detail-company">把光标放在任一公司行上</div></div>
+      <div class="detail-metric"><span>销售额占本表</span><strong id="detail-share">—</strong></div>
+      <div class="detail-metric"><span>销售额</span><strong id="detail-sales">—</strong></div>
+      <div class="detail-metric"><span>同比增幅</span><strong id="detail-growth">—</strong></div>
+    </div>
+  </section>
+
+  <section class="insight" aria-label="补充观察">
+    <article class="insight-card"><div class="insight-label">CONCENTRATION</div><p>前 3 家合计 <strong>3,436.84 亿元</strong>，占本表 10 家销售额合计 <strong>63.2%</strong>。欧莱雅领先第二名 <strong>822.17 亿元</strong>。</p></article>
+    <article class="insight-card"><div class="insight-label">GROWTH RANGE</div><p>已披露同比中，最高为宝洁 <strong>+8.56%</strong>；拜尔斯道夫为 <strong>−5.00%</strong>。LVMH 与科蒂的同比在原表中为“−”，按未披露展示。</p></article>
+  </section>
+
+  <details>
+    <summary>展开核对原表数据（10 家）</summary>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>排名</th><th>公司</th><th>销售额（亿元）</th><th>同比增幅</th></tr></thead>
+        <tbody id="source-table"></tbody>
+      </table>
+    </div>
+  </details>
+
+  <footer>
+    <strong>来源：</strong>表格_20261008.xlsx · 工作表「工作表 1 - 表格_20261008」。工作簿未注明统计年度与数据来源；同比“−”按未披露处理。销售额合计与前三名占比仅基于本表 10 家计算。<br>
+    <strong>图表说明：</strong>粉白色为单一自定义色系；颜色用于视觉层级，数值由位置与长度表达。此页为本地单文件 HTML，无需上传原始表格。
+  </footer>
+</main>
+<script>
+'use strict';
+const DATA=[
+  {rank:1,name:'欧莱雅',sales:1865.96,yoy:0.058},
+  {rank:2,name:'联合利华',sales:1043.79,yoy:0.023},
+  {rank:3,name:'宝洁',sales:527.09,yoy:0.0856},
+  {rank:4,name:'雅诗兰黛',sales:493.34,yoy:0.0543},
+  {rank:5,name:'拜尔斯道夫',sales:322.79,yoy:-0.05},
+  {rank:6,name:'科赴',sales:307.61,yoy:0.0039},
+  {rank:7,name:'LVMH',sales:307.17,yoy:null},
+  {rank:8,name:'资生堂',sales:211.6,yoy:0.062},
+  {rank:9,name:'Puig',sales:184.74,yoy:0.024},
+  {rank:10,name:'科蒂',sales:171.48,yoy:null}
+];
+const TOTAL=DATA.reduce((s,d)=>s+d.sales,0);
+const MAX_SALES=1900;
+const $=s=>document.querySelector(s);
+const fmtSales=n=>new Intl.NumberFormat('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const fmtPct=v=>v===null?'未披露':`${v>0?'+':v<0?'−':''}${Math.abs(v*100).toFixed(2)}%`;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let sortMode='sales';
+let pinnedName=null;
+
+function sortedData(){
+  const list=[...DATA];
+  if(sortMode==='growth')list.sort((a,b)=>{
+    if(a.yoy===null&&b.yoy!==null)return 1;
+    if(b.yoy===null&&a.yoy!==null)return -1;
+    if(a.yoy===null&&b.yoy===null)return a.rank-b.rank;
+    return b.yoy-a.yoy||a.rank-b.rank;
+  });
+  else list.sort((a,b)=>a.rank-b.rank);
+  return list;
+}
+function setDetail(d,locked=false){
+  if(!d){
+    $('#detail-kicker').textContent='DETAIL · HOVER OR SELECT';
+    $('#detail-company').textContent='悬停预览，或点击公司行查看详情';
+    $('#detail-share').textContent='—';$('#detail-sales').textContent='—';$('#detail-growth').textContent='—';
+    return;
+  }
+  $('#detail-kicker').textContent=locked?'PINNED · CLICK AGAIN TO UNPIN':'DETAIL · LIVE PREVIEW';
+  $('#detail-company').textContent=`${String(d.rank).padStart(2,'0')} · ${d.name}`;
+  $('#detail-share').textContent=`${(d.sales/TOTAL*100).toFixed(2)}%`;
+  $('#detail-sales').textContent=`${fmtSales(d.sales)} 亿元`;
+  $('#detail-growth').textContent=fmtPct(d.yoy);
+}
+function createRow(d,index){
+  const top=d.rank<=3;
+  const ratio=Math.max(0,Math.min(1,d.sales/MAX_SALES));
+  const growthPct=d.yoy===null?null:d.yoy*100;
+  const absWidth=growthPct===null?0:Math.min(Math.abs(growthPct)/10*50,50);
+  const left=growthPct===null?50:(growthPct<0?50-absWidth:50);
+  const unitCount=Math.floor(d.sales/25);
+  const ticks=Array.from({length:unitCount},(_,k)=>`<span class="sales-tick" style="left:${((k+.5)*25/MAX_SALES*100).toFixed(3)}%;height:${k%5===4?'13px':'8px'};top:${k%5===4?'2px':'5px'}"></span>`).join('');
+  const growthClass=growthPct===null?'':growthPct<0?'negative':'positive';
+  const fill=growthPct===null?'':`<span class="growth-fill ${growthClass}" style="left:${left}%;width:${absWidth}%"></span>`;
+  const growthLabel=growthPct===null?'未披露':fmtPct(d.yoy);
+  const row=document.createElement('article');
+  row.className=`company-row${top?' top-three':''}${pinnedName===d.name?' is-pinned':''}`;
+  row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-pressed',pinnedName===d.name?'true':'false');
+  row.setAttribute('aria-label',`${d.rank}，${d.name}，销售额 ${fmtSales(d.sales)} 亿元，同比 ${growthLabel}。点击锁定详情。`);
+  row.style.setProperty('--delay',`${index*.055}s`);
+  row.style.setProperty('--ratio',ratio.toFixed(5));
+  row.style.setProperty('--bar-delay',`${.12+index*.055}s`);
+  row.innerHTML=`
+    <div class="identity"><span class="rank">${String(d.rank).padStart(2,'0')}</span><span class="company-name">${esc(d.name)}</span>${top?'<span class="top-tag">TOP 3</span>':''}</div>
+    <div class="sales-metric">
+      <div class="sales-track" aria-hidden="true">
+        <span class="sales-gridline" style="left:26.32%"></span><span class="sales-gridline" style="left:52.63%"></span><span class="sales-gridline" style="left:78.95%"></span>
+        <span class="sales-fill"></span>${ticks}
+      </div>
+      <span class="sales-number">${fmtSales(d.sales)}</span>
+    </div>
+    <div class="growth-metric">
+      <div class="growth-track" aria-hidden="true"><span class="growth-zero"></span>${fill}</div>
+      <span class="growth-number${growthPct===null?' missing':growthPct<0?' negative':''}">${growthLabel}</span>
+    </div>`;
+  row.addEventListener('mouseenter',()=>{if(!pinnedName)setDetail(d,false);row.classList.add('is-preview')});
+  row.addEventListener('mouseleave',()=>{row.classList.remove('is-preview');if(!pinnedName)setDetail(null)});
+  row.addEventListener('focus',()=>{if(!pinnedName)setDetail(d,false);row.classList.add('is-preview')});
+  row.addEventListener('blur',()=>{row.classList.remove('is-preview');if(!pinnedName)setDetail(null)});
+  const toggle=()=>{
+    pinnedName=pinnedName===d.name?null:d.name;
+    renderRows();
+    setDetail(pinnedName?DATA.find(x=>x.name===pinnedName):null,Boolean(pinnedName));
+  };
+  row.addEventListener('click',toggle);
+  row.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}});
+  return row;
+}
+function renderRows(){
+  const frame=$('#chart-frame');
+  frame.classList.remove('is-ready');
+  const holder=$('#rows');holder.replaceChildren(...sortedData().map(createRow));
+  requestAnimationFrame(()=>frame.classList.add('is-ready'));
+  document.querySelectorAll('[data-sort]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sort===sortMode?'true':'false'));
+  setDetail(pinnedName?DATA.find(d=>d.name===pinnedName):null,Boolean(pinnedName));
+}
+document.querySelectorAll('[data-sort]').forEach(button=>button.addEventListener('click',()=>{
+  sortMode=button.dataset.sort;renderRows();
+  if(pinnedName)setDetail(DATA.find(d=>d.name===pinnedName),true);
+}));
+$('#replay').addEventListener('click',()=>{
+  const frame=$('#chart-frame');frame.classList.remove('is-ready');void frame.offsetWidth;
+  requestAnimationFrame(()=>frame.classList.add('is-ready'));
+});
+$('#source-table').innerHTML=DATA.map(d=>`<tr><td class="num">${d.rank}</td><td>${esc(d.name)}</td><td class="num">${fmtSales(d.sales)}</td><td class="num">${fmtPct(d.yoy)}</td></tr>`).join('');
+renderRows();
+</script>
+</body>
+</html>
